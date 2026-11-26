@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include "arpa/inet.h"
+/* ntohs/ntohl are provided by frame_analyzer_types.h (self-contained macros) */
 
 #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 #include "esp_log.h"

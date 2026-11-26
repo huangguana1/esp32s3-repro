@@ -11,6 +11,26 @@
 
 #include <stdint.h>
 
+/* Self-contained byte-order helpers. ESP32-S3 is little-endian; the 802.11
+ * on-air fields are big-endian. Avoid depending on lwip/network headers that
+ * are not declared in this component's requirements. */
+#ifndef ntohs
+#define ntohs(x) ((uint16_t)((((uint16_t)(x) & 0x00ffU) << 8) | \
+                             (((uint16_t)(x) & 0xff00U) >> 8)))
+#endif
+#ifndef htons
+#define htons(x) ntohs(x)
+#endif
+#ifndef ntohl
+#define ntohl(x) ((uint32_t)((((uint32_t)(x) & 0x000000ffUL) << 24) | \
+                              (((uint32_t)(x) & 0x0000ff00UL) << 8)  | \
+                              (((uint32_t)(x) & 0x00ff0000UL) >> 8)  | \
+                              (((uint32_t)(x) & 0xff000000UL) >> 24)))
+#endif
+#ifndef htonl
+#define htonl(x) ntohl(x)
+#endif
+
 /**
  * @see Ref: 802.1X-2020 [11.1.4]
  */
