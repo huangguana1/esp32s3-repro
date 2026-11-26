@@ -1,0 +1,58 @@
+name: Build ESP32-S3 firmware
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build with ESP-IDF (official action)
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.5.1
+          target: esp32s3
+          path: '.'
+
+      - name: Collect flashable binaries
+        run: |
+          set -e
+          mkdir -p firmware
+          cp build/bootloader/bootloader.bin firmware/ 2>/dev/null || true
+          cp build/partition_table/partition-table.bin firmware/ 2>/dev/null || true
+          cp build/*.bin firmware/ 2>/dev/null || true
+          cp build/flasher_args.json firmware/ 2>/dev/null || true
+          cp build/config/sdkconfig.h firmware/ 2>/dev/null || true
+          echo "--- packaged files ---"
+          ls -lh firmware/
+
+      - name: Generate flash instructions
+        run: |
+          cat > firmware/README_FLASH.txt <<'EOF'
+          ESP32-S3 reproduction firmware - Path B rogue-AP deauth
+          Paper: "Wi-Fi attacks using ESP32", R. Stehlik, FIT VUTBR, 2021
+
+          FLASH (esptool v4.7+ already installed in the local web flasher):
+            esptool.py --port <PORT> --baud 460800 write_flash @flash_args
+          Run this from the firmware/ directory (flash_args lists offsets).
+
+          Or use the local web flasher at http://127.0.0.1:8765
+
+          USAGE (serial console, 115200 baud):
+            - Board scans nearby APs and prints them.
+            - Type the EXACT SSID of YOUR OWN router and press Enter.
+            - Clone AP runs for 30 s, then restores state.
+          LEGAL: authorised / own networks only.
+          EOF
+
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: esp32s3-repro-firmware
+          path: firmware/
+          retention-days: 30
