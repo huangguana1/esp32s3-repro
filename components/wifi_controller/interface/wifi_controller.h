@@ -13,6 +13,13 @@
 #include "sniffer.h"
 #include "esp_wifi_types.h"
 
+/* IDF 5.5 no longer exposes MACSTR/MAC2STR through the WiFi headers.
+ * Provide a compatible fallback so logging keeps working. */
+#ifndef MACSTR
+#define MACSTR "%02x:%02x:%02x:%02x:%02x:%02x"
+#define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
+#endif
+
 /* Management AP credentials - made configurable instead of Kconfig */
 #ifndef CONFIG_MGMT_AP_SSID
 #define CONFIG_MGMT_AP_SSID "ManagementAP"
