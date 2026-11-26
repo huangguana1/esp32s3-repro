@@ -49,24 +49,24 @@ static void wifi_init_apsta(){
 }
 
 void wifictl_ap_start(wifi_config_t *wifi_config) {
-    ESP_LOGD(TAG, "Starting AP...");
+    ESP_LOGD(TAG, "正在启动接入点...");
     if(!wifi_init){
         wifi_init_apsta();
     }
 
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, wifi_config));
-    ESP_LOGI(TAG, "AP started with SSID=%s", wifi_config->ap.ssid);
+    ESP_LOGI(TAG, "接入点已启动，SSID=%s", wifi_config->ap.ssid);
 }
 
 void wifictl_ap_stop(){
-    ESP_LOGD(TAG, "Stopping AP...");
+    ESP_LOGD(TAG, "正在停止接入点...");
     wifi_config_t wifi_config = {
         .ap = {
             .max_connection = 0
         },
     };
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
-    ESP_LOGD(TAG, "AP stopped");
+    ESP_LOGD(TAG, "接入点已停止");
 }
 
 void wifictl_mgmt_ap_start(){
@@ -83,7 +83,7 @@ void wifictl_mgmt_ap_start(){
 }
 
 void wifictl_sta_connect_to_ap(const wifi_ap_record_t *ap_record, const char password[]){
-    ESP_LOGD(TAG, "Connecting STA to AP...");
+    ESP_LOGD(TAG, "正在将客户端连接到接入点...");
     if(!wifi_init){
         wifi_init_apsta();
     }
@@ -100,7 +100,7 @@ void wifictl_sta_connect_to_ap(const wifi_ap_record_t *ap_record, const char pas
 
     if(password != NULL){
         if(strlen(password) >= 64) {
-            ESP_LOGE(TAG, "Password is too long. Max supported length is 64");
+            ESP_LOGE(TAG, "密码过长，最大支持长度为 64");
             return;
         }
         memcpy(sta_wifi_config.sta.password, password, strlen(password) + 1);
@@ -118,7 +118,7 @@ void wifictl_sta_disconnect(){
 }
 
 void wifictl_set_ap_mac(const uint8_t *mac_ap){
-    ESP_LOGD(TAG, "Changing AP MAC address...");
+    ESP_LOGD(TAG, "正在修改接入点 MAC 地址...");
     ESP_ERROR_CHECK(esp_wifi_set_mac(WIFI_IF_AP, mac_ap));
 }
 
@@ -127,7 +127,7 @@ void wifictl_get_ap_mac(uint8_t *mac_ap){
 }
 
 void wifictl_restore_ap_mac(){
-    ESP_LOGD(TAG, "Restoring original AP MAC address...");
+    ESP_LOGD(TAG, "正在恢复原始接入点 MAC 地址...");
     ESP_ERROR_CHECK(esp_wifi_set_mac(WIFI_IF_AP, original_mac_ap));
 }
 

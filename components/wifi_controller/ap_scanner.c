@@ -21,7 +21,7 @@ static const char* TAG = "wifi_controller/ap_scanner";
 static wifictl_ap_records_t ap_records;
 
 void wifictl_scan_nearby_aps(){
-    ESP_LOGD(TAG, "Scanning nearby APs...");
+    ESP_LOGD(TAG, "正在扫描附近的接入点...");
 
     ap_records.count = CONFIG_SCAN_MAX_AP;
 
@@ -34,8 +34,8 @@ void wifictl_scan_nearby_aps(){
     
     ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, true));
     ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&ap_records.count, ap_records.records));
-    ESP_LOGI(TAG, "Found %u APs.", ap_records.count);
-    ESP_LOGD(TAG, "Scan done.");
+    ESP_LOGI(TAG, "找到 %u 个接入点", ap_records.count);
+    ESP_LOGD(TAG, "扫描完成");
 }
 
 const wifictl_ap_records_t *wifictl_get_ap_records() {
@@ -44,7 +44,7 @@ const wifictl_ap_records_t *wifictl_get_ap_records() {
 
 const wifi_ap_record_t *wifictl_get_ap_record(unsigned index) {
     if(index > ap_records.count){
-        ESP_LOGE(TAG, "Index out of bounds! %u records available, but %u requested", ap_records.count, index);
+        ESP_LOGE(TAG, "索引越界！有 %u 条记录，但请求了索引 %u", ap_records.count, index);
         return NULL;
     }
     return &ap_records.records[index];

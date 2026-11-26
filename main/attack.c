@@ -35,20 +35,20 @@ const attack_status_t *attack_get_status() {
 void attack_update_status(attack_state_t state) {
     attack_status.state = state;
     if(state == FINISHED) {
-        ESP_LOGD(TAG, "Stopping attack timeout timer");
+        ESP_LOGD(TAG, "停止攻击超时定时器");
         ESP_ERROR_CHECK(esp_timer_stop(attack_timeout_handle));
     } 
 }
 
 void attack_append_status_content(uint8_t *buffer, unsigned size){
     if(size == 0){
-        ESP_LOGE(TAG, "Size can't be 0 if you want to reallocate");
+        ESP_LOGE(TAG, "重新分配的大小不能为 0");
         return;
     }
     // temporarily save new location in case of realloc failure to preserve current content
     char *reallocated_content = realloc(attack_status.content, attack_status.content_size + size);
     if(reallocated_content == NULL){
-        ESP_LOGE(TAG, "Error reallocating status content! Status content may not be complete.");
+        ESP_LOGE(TAG, "重新分配状态内容失败，结果可能不完整");
         return;
     }
     // copy new data after current content
@@ -72,28 +72,28 @@ char *attack_alloc_result_content(unsigned size) {
  * @param arg not used.
  */
 static void attack_timeout(void* arg){
-    ESP_LOGD(TAG, "Attack timed out");
+    ESP_LOGD(TAG, "攻击已超时");
     
     attack_update_status(TIMEOUT);
 
     switch(attack_status.type) {
         case ATTACK_TYPE_PMKID:
-            ESP_LOGI(TAG, "Aborting PMKID attack...");
+            ESP_LOGI(TAG, "正在中止 PMKID 攻击...");
             attack_pmkid_stop();
             break;
         case ATTACK_TYPE_HANDSHAKE:
-            ESP_LOGI(TAG, "Abort HANDSHAKE attack...");
+            ESP_LOGI(TAG, "正在中止握手包攻击...");
             attack_handshake_stop();
             break;
         case ATTACK_TYPE_PASSIVE:
-            ESP_LOGI(TAG, "Abort PASSIVE attack...");
+            ESP_LOGI(TAG, "正在中止被动攻击...");
             break;
         case ATTACK_TYPE_DOS:
-            ESP_LOGI(TAG, "Abort DOS attack...");
+            ESP_LOGI(TAG, "正在中止拒绝服务攻击...");
             attack_dos_stop();
             break;
         default:
-            ESP_LOGE(TAG, "Unknown attack type. Not aborting anything");
+            ESP_LOGE(TAG, "未知攻击类型，未中止任何操作");
     }
 }
 
@@ -112,7 +112,7 @@ static void attack_timeout(void* arg){
  * @param event_data expects attack_request_t
  */
 static void attack_request_handler(void *args, esp_event_base_t event_base, int32_t event_id, void *event_data) {
-    ESP_LOGI(TAG, "Starting attack...");
+    ESP_LOGI(TAG, "正在启动攻击...");
     attack_request_t *attack_request = (attack_request_t *) event_data;
     attack_config_t attack_config = { .type = attack_request->type, .method = attack_request->method, .timeout = attack_request->timeout };
     attack_config.ap_record = wifictl_get_ap_record(attack_request->ap_record_id);
@@ -121,7 +121,7 @@ static void attack_request_handler(void *args, esp_event_base_t event_base, int3
     attack_status.type = attack_config.type;
 
     if(attack_config.ap_record == NULL){
-        ESP_LOGE(TAG, "NPE: No attack_config.ap_record!");
+        ESP_LOGE(TAG, "空指针：attack_config.ap_record 不存在");
         return;
     }
     // set timeout
@@ -135,13 +135,13 @@ static void attack_request_handler(void *args, esp_event_base_t event_base, int3
             attack_handshake_start(&attack_config);
             break;
         case ATTACK_TYPE_PASSIVE:
-            ESP_LOGW(TAG, "ATTACK_TYPE_PASSIVE not implemented yet!");
+            ESP_LOGW(TAG, "被动攻击类型暂未实现");
             break;
         case ATTACK_TYPE_DOS:
             attack_dos_start(&attack_config);
             break;
         default:
-            ESP_LOGE(TAG, "Unknown attack type!");
+            ESP_LOGE(TAG, "未知攻击类型");
     }
 }
 
@@ -156,7 +156,7 @@ static void attack_request_handler(void *args, esp_event_base_t event_base, int3
  * @param event_data not used
  */
 static void attack_reset_handler(void *args, esp_event_base_t event_base, int32_t event_id, void *event_data) {
-    ESP_LOGD(TAG, "Resetting attack status...");
+    ESP_LOGD(TAG, "正在重置攻击状态...");
     if(attack_status.content){
         free(attack_status.content);
         attack_status.content = NULL;

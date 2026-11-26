@@ -70,7 +70,7 @@ eapol_packet_t *parse_eapol_packet(data_frame_t *frame) {
 
     // Check if frame is type of EAPoL
     if(ntohs(*(uint16_t *) frame_buffer) == ETHER_TYPE_EAPOL) {
-        ESP_LOGD(TAG, "EAPOL packet");
+        ESP_LOGD(TAG, "EAPOL 数据包");
         frame_buffer += 2;
         return (eapol_packet_t *) frame_buffer; 
     }
@@ -79,7 +79,7 @@ eapol_packet_t *parse_eapol_packet(data_frame_t *frame) {
 
 eapol_key_packet_t *parse_eapol_key_packet(eapol_packet_t *eapol_packet){
     if(eapol_packet->header.packet_type != EAPOL_KEY){
-        ESP_LOGD(TAG, "Not an EAPoL-Key packet.");
+        ESP_LOGD(TAG, "不是 EAPoL-Key 数据包");
         return NULL;
     }
     return (eapol_key_packet_t *) eapol_packet->packet_body;
@@ -110,21 +110,21 @@ static pmkid_item_t *parse_pmkid_from_key_data(uint8_t *key_data, const uint16_t
                     key_data_field->data_type);
         
         if(key_data_field->type != KEY_DATA_TYPE){
-            ESP_LOGD(TAG, "Wrong type %x (expected %x)", key_data_field->type, KEY_DATA_TYPE);
+            ESP_LOGD(TAG, "类型错误 %x（应为 %x）", key_data_field->type, KEY_DATA_TYPE);
             continue;
         }
 
         if(ntohl(key_data_field->oui) != KEY_DATA_OUI_IEEE80211){
-            ESP_LOGD(TAG, "Wrong OUI %x (expected %x)", key_data_field->oui, KEY_DATA_OUI_IEEE80211);
+            ESP_LOGD(TAG, "OUI 错误 %x（应为 %x）", key_data_field->oui, KEY_DATA_OUI_IEEE80211);
             continue;
         }
 
         if(key_data_field->data_type != KEY_DATA_DATA_TYPE_PMKID_KDE){
-            ESP_LOGD(TAG, "Wrong data type %x (expected %x)", key_data_field->data_type, KEY_DATA_DATA_TYPE_PMKID_KDE);
+            ESP_LOGD(TAG, "数据类型错误 %x（应为 %x）", key_data_field->data_type, KEY_DATA_DATA_TYPE_PMKID_KDE);
             continue;
         }
 
-        ESP_LOGI(TAG, "Found PMKID: ");
+        ESP_LOGI(TAG, "找到 PMKID：");
         pmkid_item_t *pmkid_item = (pmkid_item_t *) malloc(sizeof(pmkid_item_t));
         pmkid_item->next = pmkid_item_head;
         pmkid_item_head = pmkid_item;
@@ -141,12 +141,12 @@ static pmkid_item_t *parse_pmkid_from_key_data(uint8_t *key_data, const uint16_t
 
 pmkid_item_t *parse_pmkid(eapol_key_packet_t *eapol_key){
     if(eapol_key->key_data_length == 0){
-        ESP_LOGD(TAG, "Empty Key Data");
+        ESP_LOGD(TAG, "Key Data 为空");
         return NULL;
     }
 
     if(eapol_key->key_information.encrypted_key_data == 1){
-        ESP_LOGD(TAG, "Key Data encrypted");
+        ESP_LOGD(TAG, "Key Data 已加密");
         return NULL;
     }
 

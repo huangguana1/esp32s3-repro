@@ -20,24 +20,24 @@ static const char *TAG = "main:attack_dos";
 static attack_dos_methods_t method = -1;
 
 void attack_dos_start(attack_config_t *attack_config) {
-    ESP_LOGI(TAG, "Starting DoS attack...");
+    ESP_LOGI(TAG, "正在启动拒绝服务攻击...");
     method = attack_config->method;
     switch(method){
         case ATTACK_DOS_METHOD_BROADCAST:
-            ESP_LOGD(TAG, "ATTACK_DOS_METHOD_BROADCAST");
+            ESP_LOGD(TAG, "拒绝服务方法：广播取消认证");
             attack_method_broadcast(attack_config->ap_record, 1);
             break;
         case ATTACK_DOS_METHOD_ROGUE_AP:
-            ESP_LOGD(TAG, "ATTACK_DOS_METHOD_ROGUE_AP");
+            ESP_LOGD(TAG, "拒绝服务方法：伪造 AP 取消认证");
             attack_method_rogueap(attack_config->ap_record);
             break;
         case ATTACK_DOS_METHOD_COMBINE_ALL:
-            ESP_LOGD(TAG, "ATTACK_DOS_METHOD_ROGUE_AP");
+            ESP_LOGD(TAG, "拒绝服务方法：伪造 AP 取消认证");
             attack_method_rogueap(attack_config->ap_record);
             attack_method_broadcast(attack_config->ap_record, 1);
             break;
         default:
-            ESP_LOGE(TAG, "Method unknown! DoS attack not started.");
+            ESP_LOGE(TAG, "方法未知，拒绝服务攻击未启动");
     }
 }
 
@@ -56,7 +56,7 @@ void attack_dos_stop() {
             wifictl_restore_ap_mac();
             break;
         default:
-            ESP_LOGE(TAG, "Unknown attack method! Attack may not be stopped properly.");
+            ESP_LOGE(TAG, "未知攻击方法，攻击可能无法正确停止");
     }
-    ESP_LOGI(TAG, "DoS attack stopped");
+    ESP_LOGI(TAG, "拒绝服务攻击已停止");
 }

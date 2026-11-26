@@ -59,7 +59,7 @@ uint8_t *pcap_serializer_init(){
 
 void pcap_serializer_append_frame(const uint8_t *buffer, unsigned size, unsigned ts_usec){
     if(size == 0){
-        ESP_LOGD(TAG, "Frame size is 0. Not appending anything.");
+        ESP_LOGD(TAG, "帧大小为 0，未追加任何内容");
         return;
     }
     // Ref: https://gitlab.com/wireshark/wireshark/-/wikis/Development/LibpcapFileFormat#record-packet-header
@@ -78,7 +78,7 @@ void pcap_serializer_append_frame(const uint8_t *buffer, unsigned size, unsigned
 
     uint8_t *reallocated_pcap_buffer = realloc(pcap_buffer, pcap_size + sizeof(pcap_record_header_t) + size);
     if(reallocated_pcap_buffer == NULL){
-        ESP_LOGE(TAG, "Error reallocating PCAP buffer! PCAP buffer may not be complete.");
+        ESP_LOGE(TAG, "重新分配 PCAP 缓冲区失败，数据可能不完整");
         return;
     }
     memcpy(&reallocated_pcap_buffer[pcap_size], &pcap_record_header, sizeof(pcap_record_header_t));

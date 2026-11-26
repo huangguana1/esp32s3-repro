@@ -55,7 +55,7 @@ void attack_method_broadcast_stop(){
  * @param ap_record target AP that will be cloned/duplicated
  */
 void attack_method_rogueap(const wifi_ap_record_t *ap_record){
-    ESP_LOGD(TAG, "Configuring Rogue AP");
+    ESP_LOGD(TAG, "正在配置伪造 AP");
     wifictl_set_ap_mac(ap_record->bssid);
     wifi_config_t ap_config = {
         .ap = {

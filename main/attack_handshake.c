@@ -39,8 +39,8 @@ static const wifi_ap_record_t *ap_record = NULL;
  * @param event_data expects wifi_promiscuous_pkt_t
  */
 static void eapolkey_frame_handler(void *args, esp_event_base_t event_base, int32_t event_id, void *event_data) {
-    ESP_LOGI(TAG, "Got EAPoL-Key frame");
-    ESP_LOGD(TAG, "Processing handshake frame...");
+    ESP_LOGI(TAG, "收到 EAPoL-Key 帧");
+    ESP_LOGD(TAG, "正在处理握手帧...");
     wifi_promiscuous_pkt_t *frame = (wifi_promiscuous_pkt_t *) event_data;
     attack_append_status_content(frame->payload, frame->rx_ctrl.sig_len);
     pcap_serializer_append_frame(frame->payload, frame->rx_ctrl.sig_len, frame->rx_ctrl.timestamp);
@@ -48,7 +48,7 @@ static void eapolkey_frame_handler(void *args, esp_event_base_t event_base, int3
 }
 
 void attack_handshake_start(attack_config_t *attack_config){
-    ESP_LOGI(TAG, "Starting handshake attack...");
+    ESP_LOGI(TAG, "正在启动握手包攻击...");
     method = attack_config->method;
     ap_record = attack_config->ap_record;
     pcap_serializer_init();
@@ -59,19 +59,19 @@ void attack_handshake_start(attack_config_t *attack_config){
     ESP_ERROR_CHECK(esp_event_handler_register(FRAME_ANALYZER_EVENTS, DATA_FRAME_EVENT_EAPOLKEY_FRAME, &eapolkey_frame_handler, NULL));
     switch(attack_config->method){
         case ATTACK_HANDSHAKE_METHOD_BROADCAST:
-            ESP_LOGD(TAG, "ATTACK_HANDSHAKE_METHOD_BROADCAST");
+            ESP_LOGD(TAG, "握手包方法：广播取消认证");
             attack_method_broadcast(ap_record, 5);
             break;
         case ATTACK_HANDSHAKE_METHOD_ROGUE_AP:
-            ESP_LOGD(TAG, "ATTACK_HANDSHAKE_METHOD_ROGUE_AP");
+            ESP_LOGD(TAG, "握手包方法：伪造 AP 取消认证");
             attack_method_rogueap(ap_record);
             break;
         case ATTACK_HANDSHAKE_METHOD_PASSIVE:
-            ESP_LOGD(TAG, "ATTACK_HANDSHAKE_METHOD_PASSIVE");
+            ESP_LOGD(TAG, "握手包方法：被动抓包");
             // No actions required. Passive handshake capture
             break;
         default:
-            ESP_LOGD(TAG, "Method unknown! Fallback to ATTACK_HANDSHAKE_METHOD_PASSIVE");
+            ESP_LOGD(TAG, "方法未知，回退到被动抓包");
     }
 }
 
@@ -88,12 +88,12 @@ void attack_handshake_stop(){
             // No actions required.
             break;
         default:
-            ESP_LOGE(TAG, "Unknown attack method! Attack may not be stopped properly.");
+            ESP_LOGE(TAG, "未知攻击方法，攻击可能无法正确停止");
     }
     wifictl_sniffer_stop();
     frame_analyzer_capture_stop();
     ESP_ERROR_CHECK(esp_event_handler_unregister(ESP_EVENT_ANY_BASE, ESP_EVENT_ANY_ID, &eapolkey_frame_handler));
     ap_record = NULL;
     method = -1;
-    ESP_LOGD(TAG, "Handshake attack stopped");
+    ESP_LOGD(TAG, "握手包攻击已停止");
 }

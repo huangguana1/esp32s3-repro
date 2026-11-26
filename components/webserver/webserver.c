@@ -143,7 +143,7 @@ static httpd_uri_t uri_run_attack_post = {
  * @{
  */
 static esp_err_t uri_status_get_handler(httpd_req_t *req) {
-    ESP_LOGD(TAG, "Fetching attack status...");
+    ESP_LOGD(TAG, "正在获取攻击状态...");
     const attack_status_t *attack_status;
     attack_status = attack_get_status();
 
@@ -176,7 +176,7 @@ static httpd_uri_t uri_status_get = {
  * @{
  */
 static esp_err_t uri_capture_pcap_get_handler(httpd_req_t *req){
-    ESP_LOGD(TAG, "Providing PCAP file...");
+    ESP_LOGD(TAG, "正在提供 PCAP 文件...");
     ESP_ERROR_CHECK(httpd_resp_set_type(req, HTTPD_TYPE_OCTET));
     return httpd_resp_send(req, (char *) pcap_serializer_get_buffer(), pcap_serializer_get_size());
 }
@@ -200,7 +200,7 @@ static httpd_uri_t uri_capture_pcap_get = {
  * @{
  */
 static esp_err_t uri_capture_hccapx_get_handler(httpd_req_t *req){
-    ESP_LOGD(TAG, "Providing HCCAPX file...");
+    ESP_LOGD(TAG, "正在提供 HCCAPX 文件...");
     ESP_ERROR_CHECK(httpd_resp_set_type(req, HTTPD_TYPE_OCTET));
     return httpd_resp_send(req, (char *) hccapx_serializer_get(), sizeof(hccapx_t));
 }
@@ -214,7 +214,7 @@ static httpd_uri_t uri_capture_hccapx_get = {
 //@}
 
 void webserver_run(){
-    ESP_LOGD(TAG, "Running webserver");
+    ESP_LOGD(TAG, "网页服务运行中");
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     httpd_handle_t server = NULL;

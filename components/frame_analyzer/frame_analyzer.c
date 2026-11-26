@@ -70,7 +70,7 @@ static void data_frame_handler(void *args, esp_event_base_t event_base, int32_t 
 }
 
 void frame_analyzer_capture_start(search_type_t search_type_arg, const uint8_t *bssid){
-    ESP_LOGI(TAG, "Frame analysis started...");
+    ESP_LOGI(TAG, "帧分析已启动...");
     search_type = search_type_arg;
     memcpy(&target_bssid, bssid, 6);
     ESP_ERROR_CHECK(esp_event_handler_register(SNIFFER_EVENTS, SNIFFER_EVENT_CAPTURED_DATA, &data_frame_handler, NULL));

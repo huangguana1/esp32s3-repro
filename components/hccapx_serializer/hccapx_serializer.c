@@ -101,7 +101,7 @@ static unsigned save_eapol(eapol_packet_t *eapol_packet, eapol_key_packet_t *eap
     unsigned eapol_len = 0;
     eapol_len = sizeof(eapol_packet_header_t) + ntohs(eapol_packet->header.packet_body_length);
     if(eapol_len > HCCAPX_MAX_EAPOL_SIZE){
-        ESP_LOGW(TAG, "EAPoL is too long (%u/%u)", eapol_len, HCCAPX_MAX_EAPOL_SIZE);
+        ESP_LOGW(TAG, "EAPoL 过长（%u/%u）", eapol_len, HCCAPX_MAX_EAPOL_SIZE);
         return 1;
     }
     hccapx.eapol_len = eapol_len;
@@ -123,7 +123,7 @@ static unsigned save_eapol(eapol_packet_t *eapol_packet, eapol_key_packet_t *eap
  * @param eapol_key_packet parsed EAPoL-Key packet
  */
 static void ap_message_m1(eapol_key_packet_t *eapol_key_packet){
-    ESP_LOGD(TAG, "From AP M1");
+    ESP_LOGD(TAG, "来自接入点的 M1");
     message_ap = 1;
     memcpy(hccapx.nonce_ap, eapol_key_packet->key_nonce, 32);
 }
@@ -135,7 +135,7 @@ static void ap_message_m1(eapol_key_packet_t *eapol_key_packet){
  * @param eapol_key_packet 
  */
 static void ap_message_m3(eapol_packet_t* eapol_packet, eapol_key_packet_t *eapol_key_packet){
-    ESP_LOGD(TAG, "From AP M3");
+    ESP_LOGD(TAG, "来自接入点的 M3");
     message_ap = 3;
     if(message_ap == 0){
         // No AP message was processed yet. ANonce has to be copied into HCCAPX buffer.
@@ -164,7 +164,7 @@ static void ap_message_m3(eapol_packet_t* eapol_packet, eapol_key_packet_t *eapo
  */
 static void ap_message(data_frame_t *frame, eapol_packet_t* eapol_packet, eapol_key_packet_t *eapol_key_packet){
     if((!is_array_zero(hccapx.mac_sta, 6)) && (memcmp(frame->mac_header.addr1, hccapx.mac_sta, 6) != 0)){
-        ESP_LOGE(TAG, "Different STA");
+        ESP_LOGE(TAG, "客户端不同");
         return;
     }
     if(message_ap == 0){
@@ -191,7 +191,7 @@ static void ap_message(data_frame_t *frame, eapol_packet_t* eapol_packet, eapol_
  * @param eapol_key_packet 
  */
 static void sta_message_m2(eapol_packet_t* eapol_packet, eapol_key_packet_t *eapol_key_packet){
-    ESP_LOGD(TAG, "From STA M2");
+    ESP_LOGD(TAG, "来自客户端的 M2");
     message_sta = 2;
     memcpy(hccapx.nonce_sta, eapol_key_packet->key_nonce, 32);
     if(save_eapol(eapol_packet, eapol_key_packet) != 0){
@@ -212,15 +212,15 @@ static void sta_message_m2(eapol_packet_t* eapol_packet, eapol_key_packet_t *eap
  * @param eapol_key_packet 
  */
 static void sta_message_m4(eapol_packet_t* eapol_packet, eapol_key_packet_t *eapol_key_packet){
-    ESP_LOGD(TAG, "From STA M4");
+    ESP_LOGD(TAG, "来自客户端的 M4");
     if((message_sta == 2) && (eapol_source != 0)){
         // If message 2 was already fully processed, there is no need to process M4 again 
-        ESP_LOGD(TAG, "Already have M2, not worth");
+        ESP_LOGD(TAG, "已有 M2，跳过");
         return;
     }
     if(message_ap == 0){
         // If there was no AP message processed yet, ANonce will be always missing.
-        ESP_LOGE(TAG, "Not enought handshake messages received.");
+        ESP_LOGE(TAG, "收到的握手消息不足");
         return;
     }
     if(eapol_source == 3){
@@ -251,7 +251,7 @@ static void sta_message(data_frame_t *frame, eapol_packet_t* eapol_packet, eapol
         memcpy(hccapx.mac_sta, frame->mac_header.addr2, 6);
     }
     else if(memcmp(frame->mac_header.addr2, hccapx.mac_sta, 6) != 0){
-        ESP_LOGE(TAG, "Different STA");
+        ESP_LOGE(TAG, "客户端不同");
         return;
     }
     // Determine which message this is by SNonce
@@ -289,6 +289,6 @@ void hccapx_serializer_add_frame(data_frame_t *frame){
         sta_message(frame, eapol_packet, eapol_key_packet);
     } 
     else {
-        ESP_LOGE(TAG, "Unknown frame format. BSSID is not source nor destionation.");
+        ESP_LOGE(TAG, "未知帧格式：BSSID 既不是源地址也不是目标地址");
     }
 }

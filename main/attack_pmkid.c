@@ -38,7 +38,7 @@ static const wifi_ap_record_t *ap_record = NULL;
  * @param event_data expexcts pmkid_item_t *
  */
 static void pmkid_exit_condition_handler(void *args, esp_event_base_t event_base, int32_t event_id, void *event_data) {
-    ESP_LOGD(TAG, "Got PMKID, stopping attack...");
+    ESP_LOGD(TAG, "收到 PMKID，正在停止攻击...");
     attack_update_status(FINISHED);
     attack_pmkid_stop();
     
@@ -71,11 +71,11 @@ static void pmkid_exit_condition_handler(void *args, esp_event_base_t event_base
         free(pmkid_item_head);
     } while(pmkid_item != NULL);
 
-    ESP_LOGD(TAG, "PMKID attack finished");
+    ESP_LOGD(TAG, "PMKID 攻击完成");
 }
 
 void attack_pmkid_start(attack_config_t *attack_config){
-    ESP_LOGI(TAG, "Starting PMKID attack...");
+    ESP_LOGI(TAG, "正在启动 PMKID 攻击...");
     ap_record = attack_config->ap_record;
     wifictl_sniffer_filter_frame_types(true, false, false);
     wifictl_sniffer_start(ap_record->primary);
@@ -89,5 +89,5 @@ void attack_pmkid_stop(){
     wifictl_sniffer_stop();
     frame_analyzer_capture_stop();
     ESP_ERROR_CHECK(esp_event_handler_unregister(ESP_EVENT_ANY_BASE, ESP_EVENT_ANY_ID, &pmkid_exit_condition_handler));
-    ESP_LOGD(TAG, "PMKID attack stopped");
+    ESP_LOGD(TAG, "PMKID 攻击已停止");
 }
