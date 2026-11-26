@@ -1,115 +1,65 @@
-# ESP32-S3 复现：Wi-Fi attacks using ESP32（路径 B）
+# ESP32-S3 完整移植：Wi-Fi attacks using ESP32
 
-这是对学术论文 **《Wi-Fi attacks using ESP32》（Richard Stehlík, FIT VUTBR, 2021）**
-核心贡献的移植复现，目标芯片为 **ESP32-S3**。
+本仓库是学术论文 **《Wi-Fi attacks using ESP32》（Richard Stehlík, FIT VUTBR, 2021）**
+配套开源实现 `risinek/esp32-wifi-penetration-tool`（MIT）的 **ESP32-S3 完整功能移植**。
 
-原项目：`risinek/esp32-wifi-penetration-tool`（该论文的配套开源实现，MIT）。
+目标是功能 1:1：保留原项目全部组件、网页 UI、攻击类型/方法枚举、状态机、
+HTTP 端点和抓包文件格式，只做让代码能在 ESP32-S3 + ESP-IDF 5.5.1 上
+编译运行所需的最小适配。
 
-## 复现的是什么
+## 与原项目完全一致的部分（未改源码逻辑）
 
-论文 3.3 节 / 图 5 提出的 **rogue-AP deauthentication**（本文称"路径 B"）：
+- **网页后台**：`esp_http_server`，页面 `pages/page_index.h` 原样（gzip 页面），
+  端点：`/`、`/ap-list`、`/run-attack`、`/status`、`/reset`、
+  `/capture.hccapx`、`/capture.pcap`
+- **攻击状态机**：`attack.c`（READY/RUNNING/FINISHED/TIMEOUT，超时定时器）
+- **攻击类型**：`ATTACK_TYPE_PASSIVE`（原项目未实现）、`ATTACK_TYPE_HANDSHAKE`、
+  `ATTACK_TYPE_PMKID`、`ATTACK_TYPE_DOS`
+- **攻击方法**：`BROADCAST`（定时发 deauth）、`ROGUE_AP`（克隆 AP）、`PASSIVE`
+- **抓包组件**：`frame_analyzer`、`pcap_serializer`、`hccapx_serializer`（原样）
+- **deauth 发送**：`wsl_bypasser` 的符号覆盖机制（S3 上同样必需）
 
-1. 扫描目标 AP，取得 SSID 与 BSSID；
-2. 用 `esp_wifi_set_mac(WIFI_IF_AP, bssid)` 把 ESP32 的 AP 接口 MAC 改成目标 BSSID；
-3. 用相同 SSID、相同信道、相同认证模式建一个克隆 AP；
-4. 依据 802.11i，AP 对收到的未认证 station 帧会自动回 deauth 帧——
-   **因此不需要帧注入，也不需要原项目里那个针对老 ESP32 闭源栈的 `wsl_bypasser`**。
+## IDF 4.1 → 5.5.1 / ESP32 → S3 的适配清单
 
-`wsl_bypasser` 之所以没移植：它覆盖的 `ieee80211_raw_frame_sanity_check`
-是 2021 年经典 ESP32（IDF 4.1）闭源 WiFi 栈的内部符号，ESP32-S3 的新栈中不存在，
-`-zmuldefs` 无从覆盖。这也正是本复现选择路径 B 的技术原因。
+| 原项目 | 本移植 | 原因 |
+|---|---|---|
+| `ESP_IF_WIFI_AP/STA` | `WIFI_IF_AP/STA` | IDF 5.x 移除旧枚举 |
+| 无 NVS 初始化（`CONFIG_ESP32_WIFI_NVS_ENABLED=n`） | `app_main` 中 `nvs_flash_init()` | IDF 5.x WiFi 必需 |
+| `wifi_controller/Kconfig` | `Kconfig.projbuild` | 组件配置须用此文件名 |
+| `arpa/inet.h` 的 `ntohs/ntohl` | 自包含宏（`frame_analyzer_types.h`） | IDF 5.5 不再提供 |
+| 组件 Kconfig 宏缺失默认值 | 全部保留在原 Kconfig.projbuild | 保证编译有定义 |
+| `sniffer.c` filter 用 `else if` | 改为独立 `if` | 原逻辑有 bug（同时请求多类型会漏） |
+| `wsl_bypasser` 用 `-Wl,-zmuldefs` | `-Wl,--allow-multiple-definition` | 现代 binutils 选项名 |
+| `webserver` PRIV_REQUIRES `main`（循环依赖） | `webserver.c` 并入 main 组件编译 | IDF 5.x 禁止循环依赖 |
+| 若干 `.c` 缺 `stdio.h`/`stdlib.h` | 补齐 | IDF 5.x 头文件更严格 |
 
-## 与原文的适配差异（IDF 4.1 → 5.x，ESP32 → S3）
+以上均为编译/API 层面的最小改动，**没有任何功能删减或行为改写**。
 
-| 原项目 | 本复现 |
-|---|---|
-| `ESP_IF_WIFI_AP` | `WIFI_IF_AP`（IDF 5.x 已移除旧宏） |
-| 无 `esp_netif` 初始化 | 补齐 `esp_netif_init()` + `esp_netif_create_default_wifi_ap/sta()` |
-| 无显式事件循环 | 补齐 `esp_event_loop_create_default()` + 事件处理器 |
-| `CONFIG_*` Kconfig 宏 | 改为头文件默认值 + `Kconfig.projbuild`（便于独立编译） |
-| 预编译 bin（经典 ESP32） | 云端针对 `esp32s3` 重新编译 |
+## 编译（GitHub Actions 云端，无需本地装 ESP-IDF）
 
-保留原样（纯逻辑、与芯片无关）：`frame_analyzer`、`pcap_serializer`、`hccapx_serializer`。
+仓库自带 `.github/workflows/build.yml`，用乐鑫官方
+`espressif/esp-idf-ci-action@v1`，target `esp32s3`，IDF `v5.5.1`。
 
-## 编译：GitHub Actions 云端（无需本地安装 ESP-IDF）
+推送到 main 即自动编译；成功后固件回写到仓库 `firmware/` 目录
+（可直接下载，无需 Artifact 权限）：
 
-项目自带 `.github/workflows/build.yml`，使用乐鑫官方 `espressif/esp-idf-ci-action@v1`，
-target 为 `esp32s3`，IDF 版本 `v5.5.1`。
+- `bootloader.bin` → 0x0
+- `partition-table.bin` → 0x8000
+- `wifi-attack-s3-repro.bin` → 0x10000
 
-步骤：
-1. 在 GitHub 新建一个仓库（public 或 private 均可）；
-2. 把本目录所有文件上传到该仓库（网页上传即可，无需命令行）；
-3. 进入仓库 **Actions** 标签 → 左侧选 **Build ESP32-S3 firmware** → **Run workflow**；
-4. 等待编译完成（约 3-8 分钟），在本次运行详情底部 **Artifacts** 处下载
-   `esp32s3-repro-firmware`；
-5. 解压得到 `bootloader.bin`、`partition-table.bin`、应用 bin、`flash_args`。
+`flash_args` 已生成，网页烧录台可自动读取。
 
-## 烧录：本地网页烧录台（无需安装 esptool 命令行）
+## 使用（网页控制台，与原项目相同）
 
-工作区已有网页烧录控制台：`/Users/wangda/WorkBuddy/2026-11-26-14-24-58/esp32-flasher`
+1. 烧录固件（本地网页烧录台 `../esp32-flasher`，http://127.0.0.1:8765）
+2. 连接 WiFi `ManagementAP`（密码 `mgmtadmin`）
+3. 浏览器打开 `http://192.168.4.1`
+4. 原项目界面：Scan → 选目标 → 选攻击类型与方法 → 设超时 → Run → 轮询状态 → 下载
 
-```bash
-cd /Users/wangda/WorkBuddy/2026-11-26-14-24-58/esp32-flasher
-.venv/bin/python server.py
-# 浏览器打开 http://127.0.0.1:8765
-```
+桌面交付包：`~/Desktop/ESP32-S3握手包工具/`（含固件、烧录脚本、网页入口、说明）。
 
-板子串口：`/dev/cu.usbmodem5C381455561`（ESP32-S3 原生 USB，免驱）。
-按网页提示上传固件各 bin 并填写地址（地址见 `flash_args`），点击烧录。
+## 合规边界
 
-也可用一行命令（ firmware 目录内）：
-```bash
-esptool.py --port /dev/cu.usbmodem5C381455561 --baud 460800 write_flash @flash_args
-```
-
-## 运行与验证
-
-烧录后打开串口（115200）：
-```bash
-screen /dev/cu.usbmodem5C381455561 115200
-```
-（退出：`Ctrl+A` 再 `Ctrl+D`）
-
-启动后扫描并打印附近 AP 列表，然后出现菜单：
-
-```
-1) Capture handshake -> export .hccapx + .pcap
-2) Path B: clone-AP deauth (paper sec.3.3)
-```
-
-### 模式 1：抓取握手包（拿到 .hccapx / .pcap）
-
-1. 输入 `1`，回车；
-2. 输入 **你自己路由器的精确 SSID**，回车；
-3. 板子在该 AP 信道启动监听模式，提示你「断开并重连一台客户端」；
-4. 拿手机/笔记本断开该 WiFi 再连上，触发 4-way handshake；
-5. 抓到 M1/M2 后再多收 3 秒，串口会输出两段 base64 标记块：
-   ```
-   ===HCCAPX_BEGIN=== ... ===HCCAPX_END===
-   ===PCAP_BEGIN===    ... ===PCAP_END===
-   ```
-6. 在工作区双击 **`接收握手包.command`**，脚本自动读串口、解码，并把
-   `握手包_时间戳.hccapx` 和 `握手包_时间戳.pcap` 存到桌面。
-
-   - `.hccapx` → 可直接给 hashcat 用；
-   - `.pcap` → 可用 Wireshark 打开，过滤 `eapol` 查看握手过程。
-
-抓包最长等待 120 秒；超时仍未抓到时，确认客户端确实重连了、且 SSID 拼写正确。
-
-### 模式 2：路径 B 克隆 AP deauth
-
-1. 输入 `2`，回车；
-2. 输入 **你自己路由器的精确 SSID**，回车；
-3. 克隆 AP 运行 30 秒（802.11i 原生 deauth 生效），随后自动恢复 MAC 与管理 AP；
-4. 用 Wireshark 观察 deauth 帧，对照论文第 4.4 节实验结论。
-
-**非交互模式**：在 `menuconfig` 打开 `REPRO_RUN_DEMO` 并填入 `REPRO_TARGET_SSID`
-可跳过串口输入（仅用于自动化实验，目标仍须为你自己的 AP；此模式只影响菜单选项 2）。
-
-## 合规边界（务必遵守）
-
-- 本程序只对**你拥有或已获明确书面授权**的 AP 运行；作者论文亦强调此点。
-- 程序刻意设计为手动输入目标 SSID，**没有**自动扫描-攻击循环，避免误伤他人网络。
-- 本复现**不含**原项目的 DoS 洪水、Evil Twin 钓鱼、凭证窃取等攻击；
-  仅实现论文核心学术贡献（路径 B）。
-- 802.11w（管理帧保护）开启的 AP 对此方法有防护，正是论文建议的缓解措施之一。
+这是学术复现工具，仅用于你拥有或已明确授权的网络。论文作者亦强调此点。
+开启 802.11w/PMF（WPA3 等）的路由器对 deauth 类方法有协议层防护，
+这是论文建议的缓解措施之一。
