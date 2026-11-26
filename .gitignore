@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.DS_Store
+build/
+sdkconfig
+managed_components/
+firmware/
+BUILD_ERROR.txt
