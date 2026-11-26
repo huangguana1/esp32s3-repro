@@ -5,6 +5,9 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -12,12 +15,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build with ESP-IDF (official action)
-        uses: espressif/esp-idf-ci-action@v1
-        with:
-          esp_idf_version: v5.5.1
-          target: esp32s3
-          path: '.'
+      - name: Install ESP-IDF v5.5.1
+        run: |
+          set -e
+          git clone --depth 1 --branch v5.5.1 https://github.com/espressif/esp-idf.git "$HOME/esp-idf"
+          cd "$HOME/esp-idf"
+          ./install.sh esp32s3
+
+      - name: Build firmware
+        run: |
+          set +e
+          . "$HOME/esp-idf/export.sh"
+          cd "$GITHUB_WORKSPACE"
+          idf.py set-target esp32s3 2>&1 | tee set_target.log
+          idf.py build 2>&1 | tee build_output.log
+          STATUS=${PIPESTATUS[0]}
+          echo "BUILD_STATUS=$STATUS"
+          echo "$STATUS" > /tmp/build_status
+
+          if [ "$STATUS" != "0" ]; then
+            grep -iE "error:|fatal error|undefined reference|error ;|Error [0-9]|No rule to make|CMake Error|note: " build_output.log set_target.log 2>/dev/null | head -120 > BUILD_ERROR.txt || true
+            tail -40 build_output.log >> BUILD_ERROR.txt
+            git config user.email ci@local
+            git config user.name CI
+            git add -f BUILD_ERROR.txt
+            git commit -m "build diagnostics [skip ci]" || true
+            git push || true
+            exit 1
+          fi
 
       - name: Collect flashable binaries
         run: |
@@ -37,7 +62,7 @@ jobs:
           ESP32-S3 reproduction firmware - Path B rogue-AP deauth
           Paper: "Wi-Fi attacks using ESP32", R. Stehlik, FIT VUTBR, 2021
 
-          FLASH (esptool v4.7+ already installed in the local web flasher):
+          FLASH (esptool v4.7+ installed in the local web flasher):
             esptool.py --port <PORT> --baud 460800 write_flash @flash_args
           Run this from the firmware/ directory (flash_args lists offsets).
 
