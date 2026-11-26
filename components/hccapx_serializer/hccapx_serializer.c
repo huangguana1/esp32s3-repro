@@ -73,9 +73,19 @@ static bool is_array_zero(uint8_t *array, unsigned size){
 }
 
 void hccapx_serializer_init(const uint8_t *ssid, unsigned size){
+    /* FIX: upstream did not reset the handshake state machine. Without this,
+     * the SECOND attack on the same boot inherits stale message_ap/message_sta,
+     * MAC addresses and nonces -> no valid .hccapx is ever produced. */
+    memset(&hccapx, 0, sizeof(hccapx));
+    hccapx.signature = HCCAPX_SIGNATURE;
+    hccapx.version = HCCAPX_VERSION;
+    hccapx.keyver = HCCAPX_KEYVER_WPA2;
     hccapx.essid_len = size;
     memcpy(hccapx.essid, ssid, size);
     hccapx.message_pair = 255;
+    message_ap = 0;
+    message_sta = 0;
+    eapol_source = 0;
 }
 
 hccapx_t *hccapx_serializer_get(){

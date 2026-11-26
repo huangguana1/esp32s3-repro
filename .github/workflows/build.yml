@@ -44,6 +44,32 @@ jobs:
             exit 1
           fi
 
+      - name: Diagnose deauth symbol override
+        run: |
+          set +e
+          . "$HOME/esp-idf/export.sh"
+          cd "$GITHUB_WORKSPACE"
+          ELF=$(find build -maxdepth 1 -name "*.elf" | head -1)
+          {
+            echo "=== ELF: $ELF ==="
+            echo "=== nm lookup: ieee80211_raw_frame_sanity_check ==="
+            xtensa-esp32s3-elf-nm -S "$ELF" 2>&1 | grep -i "sanity_check"
+            echo "=== disassembly (return 0 => our override won; long body => lib won) ==="
+            ADDR=$(xtensa-esp32s3-elf-nm "$ELF" 2>/dev/null | grep -i "ieee80211_raw_frame_sanity_check" | awk '{print $1}' | head -1)
+            echo "symbol address: $ADDR"
+            if [ -n "$ADDR" ]; then
+              xtensa-esp32s3-elf-objdump -d --start-address=$((0x$ADDR)) --stop-address=$((0x$ADDR+48)) "$ELF" 2>&1
+            fi
+            echo "=== multiple-definition linker note ==="
+            grep -i "multiple definition\|allow-multiple" build_output.log 2>/dev/null | head -10
+          } > DEAUTH_DIAG.txt 2>&1
+          cat DEAUTH_DIAG.txt
+          git config user.email ci@local
+          git config user.name CI
+          git add -f DEAUTH_DIAG.txt
+          git commit -m "deauth symbol diagnostics [skip ci]" || true
+          git push || true
+
       - name: Collect flashable binaries
         run: |
           set -e

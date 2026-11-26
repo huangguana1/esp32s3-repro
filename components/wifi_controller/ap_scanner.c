@@ -43,7 +43,7 @@ const wifictl_ap_records_t *wifictl_get_ap_records() {
 }
 
 const wifi_ap_record_t *wifictl_get_ap_record(unsigned index) {
-    if(index > ap_records.count){
+    if(index >= ap_records.count){
         ESP_LOGE(TAG, "索引越界！有 %u 条记录，但请求了索引 %u", ap_records.count, index);
         return NULL;
     }
