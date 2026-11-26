@@ -70,15 +70,41 @@ screen /dev/cu.usbmodem5C381455561 115200
 ```
 （退出：`Ctrl+A` 再 `Ctrl+D`）
 
-程序行为：
-1. 启动后扫描并打印附近 AP 列表（序号 / SSID / BSSID / 信道 / 信号强度）；
-2. 提示输入 **你自己路由器的精确 SSID**，回车；
-3. 克隆 AP 运行 30 秒（此期间 802.11i 原生 deauth 生效），然后自动恢复原 MAC、
-   重启管理 AP；
-4. 用另一台设备或抓包工具观察 deauth 帧与握手包，对照论文第 4.4 节的实验结论。
+启动后扫描并打印附近 AP 列表，然后出现菜单：
+
+```
+1) Capture handshake -> export .hccapx + .pcap
+2) Path B: clone-AP deauth (paper sec.3.3)
+```
+
+### 模式 1：抓取握手包（拿到 .hccapx / .pcap）
+
+1. 输入 `1`，回车；
+2. 输入 **你自己路由器的精确 SSID**，回车；
+3. 板子在该 AP 信道启动监听模式，提示你「断开并重连一台客户端」；
+4. 拿手机/笔记本断开该 WiFi 再连上，触发 4-way handshake；
+5. 抓到 M1/M2 后再多收 3 秒，串口会输出两段 base64 标记块：
+   ```
+   ===HCCAPX_BEGIN=== ... ===HCCAPX_END===
+   ===PCAP_BEGIN===    ... ===PCAP_END===
+   ```
+6. 在工作区双击 **`接收握手包.command`**，脚本自动读串口、解码，并把
+   `握手包_时间戳.hccapx` 和 `握手包_时间戳.pcap` 存到桌面。
+
+   - `.hccapx` → 可直接给 hashcat 用；
+   - `.pcap` → 可用 Wireshark 打开，过滤 `eapol` 查看握手过程。
+
+抓包最长等待 120 秒；超时仍未抓到时，确认客户端确实重连了、且 SSID 拼写正确。
+
+### 模式 2：路径 B 克隆 AP deauth
+
+1. 输入 `2`，回车；
+2. 输入 **你自己路由器的精确 SSID**，回车；
+3. 克隆 AP 运行 30 秒（802.11i 原生 deauth 生效），随后自动恢复 MAC 与管理 AP；
+4. 用 Wireshark 观察 deauth 帧，对照论文第 4.4 节实验结论。
 
 **非交互模式**：在 `menuconfig` 打开 `REPRO_RUN_DEMO` 并填入 `REPRO_TARGET_SSID`
-可跳过串口输入（仅用于自动化实验，目标仍须为你自己的 AP）。
+可跳过串口输入（仅用于自动化实验，目标仍须为你自己的 AP；此模式只影响菜单选项 2）。
 
 ## 合规边界（务必遵守）
 
