@@ -75,7 +75,12 @@ void wifictl_sniffer_start(uint8_t channel) {
     // ESP32 cannot switch port, if there is some STA connected to AP
     ESP_LOGD(TAG, "正在将已连接的客户端从接入点踢出");
     ESP_ERROR_CHECK(esp_wifi_deauth_sta(0));
-    esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
+    esp_err_t ch_ret = esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
+    if(ch_ret != ESP_OK){
+        ESP_LOGE(TAG, "切换信道 %u 失败: %s —— 混杂监听可能工作在错误信道，抓不到帧", channel, esp_err_to_name(ch_ret));
+    } else {
+        ESP_LOGI(TAG, "已切换到目标信道 %u", channel);
+    }
     esp_wifi_set_promiscuous(true);
     esp_wifi_set_promiscuous_rx_cb(&frame_handler);
 }
