@@ -58,8 +58,6 @@ static void frame_handler(void *buf, wifi_promiscuous_pkt_type_t type) {
  */
 void wifictl_sniffer_filter_frame_types(bool data, bool mgmt, bool ctrl) {
     wifi_promiscuous_filter_t filter = { .filter_mask = 0 };
-    /* All three flags are independent - original code used else-if, which
-     * silently dropped DATA when MGMT/CTRL was also requested. */
     if(data) {
         filter.filter_mask |= WIFI_PROMIS_FILTER_MASK_DATA;
     }

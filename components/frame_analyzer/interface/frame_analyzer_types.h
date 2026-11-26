@@ -11,9 +11,8 @@
 
 #include <stdint.h>
 
-/* Self-contained byte-order helpers. ESP32-S3 is little-endian; the 802.11
- * on-air fields are big-endian. Avoid depending on lwip/network headers that
- * are not declared in this component's requirements. */
+/* Self-contained byte-order helpers: IDF 5.5 no longer exposes these via
+ * arpa/inet.h, and 802.11 on-air fields are big-endian on little-endian S3. */
 #ifndef ntohs
 #define ntohs(x) ((uint16_t)((((uint16_t)(x) & 0x00ffU) << 8) | \
                              (((uint16_t)(x) & 0xff00U) >> 8)))

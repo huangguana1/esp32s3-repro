@@ -73,20 +73,9 @@ static bool is_array_zero(uint8_t *array, unsigned size){
 }
 
 void hccapx_serializer_init(const uint8_t *ssid, unsigned size){
-    /* Full reset so repeated captures in one boot do not inherit old state */
-    memset(&hccapx, 0, sizeof(hccapx));
-    hccapx.signature = HCCAPX_SIGNATURE;
-    hccapx.version = HCCAPX_VERSION;
-    hccapx.message_pair = 255;
-    hccapx.keyver = HCCAPX_KEYVER_WPA2;
-    if (size > sizeof(hccapx.essid)) {
-        size = sizeof(hccapx.essid);
-    }
     hccapx.essid_len = size;
     memcpy(hccapx.essid, ssid, size);
-    message_ap = 0;
-    message_sta = 0;
-    eapol_source = 0;
+    hccapx.message_pair = 255;
 }
 
 hccapx_t *hccapx_serializer_get(){
