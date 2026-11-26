@@ -1,38 +1,38 @@
 === ELF: build/wifi-attack-s3-repro.elf ===
 === nm lookup: ieee80211_raw_frame_sanity_check ===
-42012418 0000006e t esp_netif_config_sanity_check
-4208716c 00000007 T ieee80211_raw_frame_sanity_check
+42012468 0000006e t esp_netif_config_sanity_check
+420871bc 00000007 T ieee80211_raw_frame_sanity_check
 === disassembly (return 0 => our override won; long body => lib won) ===
-symbol address: 4208716c
+symbol address: 420871bc
 
 build/wifi-attack-s3-repro.elf:     file format elf32-xtensa-le
 
 
 Disassembly of section .flash.text:
 
-4208716c <ieee80211_raw_frame_sanity_check>:
-4208716c:	004136        	entry	a1, 32
-4208716f:	020c      	movi.n	a2, 0
-42087171:	f01d      	retw.n
+420871bc <ieee80211_raw_frame_sanity_check>:
+420871bc:	004136        	entry	a1, 32
+420871bf:	020c      	movi.n	a2, 0
+420871c1:	f01d      	retw.n
 	...
 
-42087174 <s_mem_caps_check>:
-42087174:	004136        	entry	a1, 32
-42087177:	096207        	bbci	a2, 0, 42087184 <s_mem_caps_check+0x10>
-4208717a:	481c      	movi.n	a8, 20
-4208717c:	098287        	bany	a2, a8, 42087189 <s_mem_caps_check+0x15>
-4208717f:	020c      	movi.n	a2, 0
-42087181:	0001c6        	j	4208718c <s_mem_caps_check+0x18>
-42087184:	020c      	movi.n	a2, 0
-42087186:	000086        	j	4208718c <s_mem_caps_check+0x18>
-42087189:	02a122        	movi	a2, 0x102
-4208718c:	f01d      	retw.n
+420871c4 <s_mem_caps_check>:
+420871c4:	004136        	entry	a1, 32
+420871c7:	096207        	bbci	a2, 0, 420871d4 <s_mem_caps_check+0x10>
+420871ca:	481c      	movi.n	a8, 20
+420871cc:	098287        	bany	a2, a8, 420871d9 <s_mem_caps_check+0x15>
+420871cf:	020c      	movi.n	a2, 0
+420871d1:	0001c6        	j	420871dc <s_mem_caps_check+0x18>
+420871d4:	020c      	movi.n	a2, 0
+420871d6:	000086        	j	420871dc <s_mem_caps_check+0x18>
+420871d9:	02a122        	movi	a2, 0x102
+420871dc:	f01d      	retw.n
 	...
 
-42087190 <s_find_available_region>:
-42087190:	004136        	entry	a1, 32
-42087193:	02ad      	mov.n	a10, a2
-42087195:	020c      	movi.n	a2, 0
-42087197:	000606        	j	420871b3 <s_find_available_region+0x23>
+420871e0 <s_find_available_region>:
+420871e0:	004136        	entry	a1, 32
+420871e3:	02ad      	mov.n	a10, a2
+420871e5:	020c      	movi.n	a2, 0
+420871e7:	000606        	j	42087203 <s_find_available_region+0x23>
 	...
 === multiple-definition linker note ===
