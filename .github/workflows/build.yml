@@ -77,6 +77,15 @@ jobs:
           LEGAL: authorised / own networks only.
           EOF
 
+      - name: Commit firmware into repo (direct download fallback)
+        run: |
+          set +e
+          git config user.email ci@local
+          git config user.name CI
+          git add -f firmware/
+          git commit -m "firmware build [skip ci]" || true
+          git push || true
+
       - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
         with:
